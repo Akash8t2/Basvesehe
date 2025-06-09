@@ -1,61 +1,61 @@
 {
-  "name": "Meta-Hunter",  
-  "description": "Instagram & email enumeration bot",  
-  "keywords": [  
-    "telegram",  
-    "bot",  
-    "instagram",  
-    "email",  
-    "enumeration"  
-  ],  
-  "website": "https://your-website.com",  // <-- Optional: Add the bot's website if available
-  "repository": "https://github.com/YourUsername/Meta-Hunter",  
-  "logo": "https://example.com/logo.png",  // <-- Optional: Add the logo URL
-  "success_url": "/welcome",  
-  "scripts": {  
-    "postdeploy": "python3 setup.py install"  // <-- Customize post-deploy if you need specific setup
-  },  
-  "env": {  
-    "CHAT_ID": {  
-      "description": "Telegram chat ID for sending results.",  
-      "required": true  
-    },  
-    "TOKEN": {  
-      "description": "Telegram bot token from BotFather.",  
-      "required": true  
-    },  
-    "YEAR": {  
-      "description": "Year range for enumeration (1-9 or 0 for full range 2010-2023).",  
-      "required": false  
-    },  
-    "THREADS": {  
-      "description": "Number of threads for enumeration.",  
-      "required": false  
-    }  
-  },  
-  "formation": {  
-    "worker": {  
-      "quantity": 1,  
-      "size": "basic"  
-    }  
-  },  
-  "addons": [  
-    "openredis",  
-    {  
-      "plan": "mongolab:shared-single-small",  
-      "as": "MONGO"  
-    },  
-    {  
-      "plan": "heroku-postgresql",  
-      "options": {  
-        "version": "9.5"  
-      }  
-    }  
-  ],  
-  "buildpacks": [  
-    {  
-      "url": "heroku/python"  // <-- Specify the buildpack based on your app's requirements
-    }  
+  "name": "Meta-Hunter",
+  "description": "Instagram & Email Enumeration Bot for Telegram",
+  "keywords": [
+    "telegram",
+    "bot",
+    "instagram",
+    "email",
+    "enumeration"
+  ],
+  "website": "https://your-website.com",
+  "repository": "https://github.com/YourUsername/Meta-Hunter",
+  "logo": "https://example.com/logo.png",
+  "success_url": "/welcome",
+  "scripts": {
+    "postdeploy": "python3 setup.py install"
+  },
+  "env": {
+    "CHAT_ID": {
+      "description": "Telegram chat ID for sending results",
+      "required": true
+    },
+    "TOKEN": {
+      "description": "Telegram bot token from BotFather",
+      "required": true
+    },
+    "YEAR": {
+      "description": "Year range for enumeration (1–9 or 0 for full 2010–2023)",
+      "required": false
+    },
+    "THREADS": {
+      "description": "Number of threads to run in parallel",
+      "required": false
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "addons": [
+    "openredis",
+    {
+      "plan": "mongolab:shared-single-small",
+      "as": "MONGO"
+    },
+    {
+      "plan": "heroku-postgresql",
+      "options": {
+        "version": "9.5"
+      }
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
   ],
   "environments": {
     "test": {
