@@ -1,0 +1,16 @@
+{
+  "name": "meta-hunter",
+  "description": "Instagram & email enumeration worker",
+  "buildpacks": [
+    { "url": "heroku/python" }
+  ],
+  "env": {
+    "CHAT_ID":    { "description": "Telegram chat ID", "required": true },
+    "TOKEN":      { "description": "Telegram bot token", "required": true },
+    "YEAR":       { "description": "Year range 1–9 or 0 for full 2010–2023", "required": false },
+    "THREADS":    { "description": "Number of threads to run", "required": false }
+  },
+  "formation": {
+    "worker": { "quantity": 1, "size": "free" }
+  }
+}
