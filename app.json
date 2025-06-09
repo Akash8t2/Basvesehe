@@ -1,16 +1,34 @@
 {
-  "name": "meta-hunter",
-  "description": "Instagram & email enumeration worker",
+  "name": "Meta-Hunter",
+  "description": "Telegram bot for Instagram & email enumeration.",
+  "repository": "https://github.com/akash8t2/basesehe",  // <-- (Optional) Replace with actual repo URL
+  "logo": "https://example.com/logo.png",                     // <-- (Optional) Add if available
+  "keywords": ["telegram", "bot", "instagram", "email", "enum"],
   "buildpacks": [
     { "url": "heroku/python" }
   ],
   "env": {
-    "CHAT_ID":    { "description": "Telegram chat ID", "required": true },
-    "TOKEN":      { "description": "Telegram bot token", "required": true },
-    "YEAR":       { "description": "Year range 1–9 or 0 for full 2010–2023", "required": false },
-    "THREADS":    { "description": "Number of threads to run", "required": false }
+    "CHAT_ID": {
+      "description": "Telegram chat ID where the bot sends results.",
+      "required": true
+    },
+    "TOKEN": {
+      "description": "Telegram bot token from BotFather.",
+      "required": true
+    },
+    "YEAR": {
+      "description": "Year range to target (1–9 or 0 for full range 2010–2023).",
+      "required": false
+    },
+    "THREADS": {
+      "description": "Number of threads to use for enumeration.",
+      "required": false
+    }
   },
   "formation": {
-    "worker": { "quantity": 1, "size": "free" }
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
   }
 }
