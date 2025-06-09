@@ -1,34 +1,67 @@
 {
-  "name": "Meta-Hunter",
-  "description": "Telegram bot for Instagram & email enumeration.",
-  "repository": "https://github.com/akash8t2/basesehe",  // <-- (Optional) Replace with actual repo URL
-  "logo": "https://example.com/logo.png",                     // <-- (Optional) Add if available
-  "keywords": ["telegram", "bot", "instagram", "email", "enum"],
-  "buildpacks": [
-    { "url": "heroku/python" }
+  "name": "Meta-Hunter",  
+  "description": "Instagram & email enumeration bot",  
+  "keywords": [  
+    "telegram",  
+    "bot",  
+    "instagram",  
+    "email",  
+    "enumeration"  
+  ],  
+  "website": "https://your-website.com",  // <-- Optional: Add the bot's website if available
+  "repository": "https://github.com/YourUsername/Meta-Hunter",  
+  "logo": "https://example.com/logo.png",  // <-- Optional: Add the logo URL
+  "success_url": "/welcome",  
+  "scripts": {  
+    "postdeploy": "python3 setup.py install"  // <-- Customize post-deploy if you need specific setup
+  },  
+  "env": {  
+    "CHAT_ID": {  
+      "description": "Telegram chat ID for sending results.",  
+      "required": true  
+    },  
+    "TOKEN": {  
+      "description": "Telegram bot token from BotFather.",  
+      "required": true  
+    },  
+    "YEAR": {  
+      "description": "Year range for enumeration (1-9 or 0 for full range 2010-2023).",  
+      "required": false  
+    },  
+    "THREADS": {  
+      "description": "Number of threads for enumeration.",  
+      "required": false  
+    }  
+  },  
+  "formation": {  
+    "worker": {  
+      "quantity": 1,  
+      "size": "basic"  
+    }  
+  },  
+  "addons": [  
+    "openredis",  
+    {  
+      "plan": "mongolab:shared-single-small",  
+      "as": "MONGO"  
+    },  
+    {  
+      "plan": "heroku-postgresql",  
+      "options": {  
+        "version": "9.5"  
+      }  
+    }  
+  ],  
+  "buildpacks": [  
+    {  
+      "url": "heroku/python"  // <-- Specify the buildpack based on your app's requirements
+    }  
   ],
-  "env": {
-    "CHAT_ID": {
-      "description": "Telegram chat ID where the bot sends results.",
-      "required": true
-    },
-    "TOKEN": {
-      "description": "Telegram bot token from BotFather.",
-      "required": true
-    },
-    "YEAR": {
-      "description": "Year range to target (1–9 or 0 for full range 2010–2023).",
-      "required": false
-    },
-    "THREADS": {
-      "description": "Number of threads to use for enumeration.",
-      "required": false
-    }
-  },
-  "formation": {
-    "worker": {
-      "quantity": 1,
-      "size": "basic"
+  "environments": {
+    "test": {
+      "scripts": {
+        "test": "pytest"
+      }
     }
   }
 }
