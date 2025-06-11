@@ -450,20 +450,40 @@ def gg_worker():
                 "variables": json.dumps({"id": rand_id, "render_surface": "PROFILE"}),
                 "doc_id": "25618261841150840"
             }
+            headers = {
+                "X-FB-LSD": data["lsd"],
+                "User-Agent": ggb(),
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "*/*",
+                "Origin": "https://www.instagram.com",
+                "Referer": "https://www.instagram.com/",
+            }
+
             response = requests.post(
                 "https://www.instagram.com/api/graphql",
-                headers={"X-FB-LSD": data["lsd"], "User-Agent": ggb()},
+                headers=headers,
                 data=data
             )
-            user_data = response.json().get('data', {}).get('user', {})
+
+            try:
+                json_data = response.json()
+            except Exception as e:
+                print(Fore.RED + "[JSON ERROR] Failed to parse response:")
+                print("Status Code:", response.status_code)
+                print("Response Text:", response.text[:500])
+                continue
+
+            user_data = json_data.get('data', {}).get('user', {})
             username = user_data.get('username')
+
             if username:
                 infoinsta[username] = user_data
                 emails = [f"{username}@gmail.com", f"{username}@aol.com"]
                 for email in emails:
                     check(email)
+
         except Exception as e:
-            print(Fore.RED + f"Error in gg_worker: {e}")
+            print(Fore.RED + f"❌ Error in gg_worker: {e}")
 
 if __name__ == "__main__":
     # Initial setup
