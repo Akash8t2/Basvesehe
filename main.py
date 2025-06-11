@@ -458,8 +458,6 @@ def gg_worker():
                 "Accept": "*/*",
                 "Origin": "https://www.instagram.com",
                 "Referer": "https://www.instagram.com/",
-                # Optional: Add Instagram session cookies below if needed
-                # "Cookie": "sessionid=YOUR_SESSION_ID; ds_user_id=YOUR_USER_ID;"
             }
 
             response = requests.post(
@@ -470,29 +468,27 @@ def gg_worker():
 
             try:
                 json_data = response.json()
+                user_data = json_data.get('data', {}).get('user')
+
+                if not isinstance(user_data, dict):
+                    print(Fore.RED + "⚠️ user_data is missing or invalid")
+                    continue
+
+                username = user_data.get('username')
+                if username:
+                    infoinsta[username] = user_data
+                    emails = [f"{username}@gmail.com", f"{username}@aol.com"]
+                    for email in emails:
+                        check(email)
+
             except Exception as e:
                 print(Fore.RED + "[JSON ERROR] Failed to parse response:")
                 print("Status Code:", response.status_code)
                 print("Response Text:", response.text[:500])
                 continue
 
-            user_data = json_data.get('data', {}).get('user')
-
-if not isinstance(user_data, dict):
-    print(Fore.RED + "⚠️ user_data is missing or invalid")
-    continue
-
-username = user_data.get('username')
-
-            if username:
-                infoinsta[username] = user_data
-                emails = [f"{username}@gmail.com", f"{username}@aol.com"]
-                for email in emails:
-                    check(email)
-
         except Exception as e:
             print(Fore.RED + f"❌ Error in gg_worker: {e}")
-
 if __name__ == "__main__":
     # Initial setup
     tll()
