@@ -476,8 +476,13 @@ def gg_worker():
                 print("Response Text:", response.text[:500])
                 continue
 
-            user_data = json_data.get('data', {}).get('user', {})
-            username = user_data.get('username')
+            user_data = json_data.get('data', {}).get('user')
+
+if not isinstance(user_data, dict):
+    print(Fore.RED + "⚠️ user_data is missing or invalid")
+    continue
+
+username = user_data.get('username')
 
             if username:
                 infoinsta[username] = user_data
