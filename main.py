@@ -450,6 +450,7 @@ def gg_worker():
                 "variables": json.dumps({"id": rand_id, "render_surface": "PROFILE"}),
                 "doc_id": "25618261841150840"
             }
+
             headers = {
                 "X-FB-LSD": data["lsd"],
                 "User-Agent": ggb(),
@@ -457,6 +458,8 @@ def gg_worker():
                 "Accept": "*/*",
                 "Origin": "https://www.instagram.com",
                 "Referer": "https://www.instagram.com/",
+                # Optional: Add Instagram session cookies below if needed
+                # "Cookie": "sessionid=YOUR_SESSION_ID; ds_user_id=YOUR_USER_ID;"
             }
 
             response = requests.post(
