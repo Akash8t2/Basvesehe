@@ -474,7 +474,7 @@ def gg_worker():
 if __name__ == "__main__":
     tll()
     Getaol()
-    THREADS = int(os.getenv('THREADS', '10'))  # Default 10, can be set in env
+    THREADS = int(os.getenv('THREADS', '200'))  # Default 10, can be set in env
     for _ in range(THREADS):
         Thread(target=gg_worker, daemon=True).start()
     while True:
