@@ -120,7 +120,8 @@ def check_gmail(email):
     global hits, bademail
     try:
         local = email.split('@')[0] if '@' in email else email
-        line = open('tl.txt', 'r').read().splitlines()[0]
+        with open('tl.txt', 'r') as f:
+            line = f.read().splitlines()[0]
         tl, host = line.split('//')
         cookies = {'__Host-GAPS': host}
         headers = {
@@ -454,7 +455,6 @@ def gg_worker():
                 json_data = response.json()
                 user_data = json_data.get('data', {}).get('user')
                 if not isinstance(user_data, dict):
-                    # print(Fore.RED + "⚠️ user_data is missing or invalid")
                     continue
                 username = user_data.get('username')
                 if username:
@@ -463,19 +463,18 @@ def gg_worker():
                     for email in emails:
                         check(email)
             except Exception as e:
-                # print(Fore.RED + "[JSON ERROR] Failed to parse response:")
-                # print("Status Code:", response.status_code)
-                # print("Response Text:", response.text[:500])
                 continue
         except Exception as e:
-            # print(Fore.RED + f"❌ Error in gg_worker: {e}")
             continue
 
 if __name__ == "__main__":
     tll()
     Getaol()
-    THREADS = int(os.getenv('THREADS', '200'))  # Default 10, can be set in env
+    THREADS = int(os.getenv('THREADS', '200'))  # Default 200, can be set in env
     for _ in range(THREADS):
         Thread(target=gg_worker, daemon=True).start()
     while True:
-        time.sleep(0.9)
+        # 1 minute active
+        time.sleep(60)
+        # 10 second sleep
+        time.sleep(10)
