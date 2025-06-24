@@ -15,7 +15,6 @@ from cfonts import render
 # Initialize colorama
 init(autoreset=True)
 
-# Read Heroku environment variables
 CHAT_ID = os.getenv('CHAT_ID')
 TOKEN = os.getenv('TOKEN')
 YEAR = os.getenv('YEAR', '0')  # '1'..'9' or '0' for full range
@@ -23,7 +22,6 @@ YEAR = os.getenv('YEAR', '0')  # '1'..'9' or '0' for full range
 if not (CHAT_ID and TOKEN):
     raise RuntimeError("❌ CHAT_ID and TOKEN must be set as environment variables.")
 
-# Pre-launch banner (appears in Heroku logs)
 try:
     banner = render('{PRINCE}', colors=['white', 'red'], align='center')
     print(f"\n{banner}\n")
@@ -34,11 +32,9 @@ print(Style.BRIGHT + Fore.CYAN + "🔄 Meta Hunter Worker starting on Heroku...\
 aca = total = hits = badinsta = bademail = goodig = 0
 infoinsta = {}
 counter_lock = Lock()
-
 last_status_time = 0
 status_lock = Lock()
 
-# Determine bbk and id_max based on YEAR env var
 try:
     yr = int(YEAR)
 except Exception as e:
@@ -68,7 +64,7 @@ def pppp():
     global last_status_time, hits, badinsta, bademail, goodig
     with status_lock:
         now = time.time()
-        if now - last_status_time > 5:  # Only print every 5 seconds
+        if now - last_status_time > 5:
             status = (
                 f"Hits: {hits}  | "
                 f"Bad Insta: {badinsta}  | "
@@ -101,7 +97,6 @@ def rest(user):
                                })
             }
         )
-        # FIX: Only call .json() if we really got JSON!
         if 'application/json' in response.headers.get('Content-Type', ''):
             return response.json().get('email', 'no REST !')
         else:
@@ -278,9 +273,8 @@ def check(email):
             headers=headers,
             data=data
         )
-        # FIX: Only parse JSON if Content-Type is JSON!
         if 'application/json' in response.headers.get('Content-Type', ''):
-            response_text = response.text  # for debugging
+            response_text = response.text
             if email in response_text:
                 print(f"[CHECK] {email} found on IG, now checking provider...")
                 if '@gmail.com' in email:
@@ -475,8 +469,21 @@ def gg_worker():
                 data=data
             )
             try:
-                # FIX: Only parse as JSON if the response is actually JSON!
-                if 'application/json' in response.headers.get('Content-Type', ''):
+                content_type = response.headers.get('Content-Type', '')
+                text = response.text
+
+                if '"Rate limit exceeded"' in text:
+                    print("Rate limit exceeded, sleeping for 5 minutes...")
+                    time.sleep(300)
+                    continue
+
+                if content_type.startswith('text/html') or text.startswith('<!DOCTYPE html>'):
+                    print("Blocked or login page received, sleeping for 10 minutes...")
+                    print(text[:300])
+                    time.sleep(600)
+                    continue
+
+                if 'application/json' in content_type:
                     json_data = response.json()
                     user_data = json_data.get('data', {}).get('user')
                     if not isinstance(user_data, dict):
@@ -490,7 +497,7 @@ def gg_worker():
                             check(email)
                 else:
                     print("[WORKER] Instagram did NOT return JSON. Dumping first 300 chars:")
-                    print(response.text[:300])
+                    print(text[:300])
                     continue
             except Exception as e:
                 print("[WORKER JSON ERROR]", e)
@@ -516,3 +523,4 @@ if __name__ == "__main__":
         time.sleep(60)
         print("[MAIN] Main loop sleeping 10s...")
         time.sleep(10)
+ 
