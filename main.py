@@ -45,36 +45,24 @@ except Exception as e:
     print("[YEAR ENV ERROR]", e)
     yr = 0
 
-if yr == 1:
-    bbk = 10000
-    id_max = 17699999
-elif yr == 2:
-    bbk = 17699999
-    id_max = 263014407
-elif yr == 3:
-    bbk = 263014407
-    id_max = 361365133
-elif yr == 4:
-    bbk = 361365133
-    id_max = 1629010000
-elif yr == 5:
-    bbk = 1629010000
-    id_max = 2500000000
-elif yr == 6:
-    bbk = 2500000000
-    id_max = 3713668786
-elif yr == 7:
-    bbk = 3713668786
-    id_max = 5699785217
-elif yr == 8:
-    bbk = 5699785217
-    id_max = 8597939245
-elif yr == 9:
-    bbk = 8597939245
-    id_max = 21254029834
-else:
-    bbk = 10000
-    id_max = 21254029834
+year_ranges = [
+    (1, 10000, 17699999),
+    (2, 17699999, 263014407),
+    (3, 263014407, 361365133),
+    (4, 361365133, 1629010000),
+    (5, 1629010000, 2500000000),
+    (6, 2500000000, 3713668786),
+    (7, 3713668786, 5699785217),
+    (8, 5699785217, 8597939245),
+    (9, 8597939245, 21254029834)
+]
+bbk = 10000
+id_max = 21254029834
+for yr_val, bbk_val, id_max_val in year_ranges:
+    if yr == yr_val:
+        bbk = bbk_val
+        id_max = id_max_val
+        break
 
 def pppp():
     global last_status_time, hits, badinsta, bademail, goodig
@@ -113,7 +101,13 @@ def rest(user):
                                })
             }
         )
-        return response.json().get('email', 'no REST !')
+        # FIX: Only call .json() if we really got JSON!
+        if 'application/json' in response.headers.get('Content-Type', ''):
+            return response.json().get('email', 'no REST !')
+        else:
+            print("[REST] Non-JSON response received:")
+            print(response.text[:300])
+            return 'no REST !'
     except Exception as e:
         print("[REST ERROR]", e)
         return 'no REST !'
@@ -283,17 +277,26 @@ def check(email):
             'https://i.instagram.com/api/v1/accounts/send_recovery_flow_email/',
             headers=headers,
             data=data
-        ).text
-        if email in response:
-            print(f"[CHECK] {email} found on IG, now checking provider...")
-            if '@gmail.com' in email:
-                check_gmail(email)
+        )
+        # FIX: Only parse JSON if Content-Type is JSON!
+        if 'application/json' in response.headers.get('Content-Type', ''):
+            response_text = response.text  # for debugging
+            if email in response_text:
+                print(f"[CHECK] {email} found on IG, now checking provider...")
+                if '@gmail.com' in email:
+                    check_gmail(email)
+                else:
+                    check_aol(email)
+                with counter_lock:
+                    goodig += 1
+                pppp()
             else:
-                check_aol(email)
-            with counter_lock:
-                goodig += 1
-            pppp()
+                with counter_lock:
+                    badinsta += 1
+                pppp()
         else:
+            print("[CHECK] Instagram did NOT return JSON. Dumping first 300 chars:")
+            print(response.text[:300])
             with counter_lock:
                 badinsta += 1
             pppp()
@@ -472,17 +475,23 @@ def gg_worker():
                 data=data
             )
             try:
-                json_data = response.json()
-                user_data = json_data.get('data', {}).get('user')
-                if not isinstance(user_data, dict):
+                # FIX: Only parse as JSON if the response is actually JSON!
+                if 'application/json' in response.headers.get('Content-Type', ''):
+                    json_data = response.json()
+                    user_data = json_data.get('data', {}).get('user')
+                    if not isinstance(user_data, dict):
+                        continue
+                    username = user_data.get('username')
+                    if username:
+                        print(f"[WORKER] Processing IG user: {username}")
+                        infoinsta[username] = user_data
+                        emails = [f"{username}@gmail.com", f"{username}@aol.com"]
+                        for email in emails:
+                            check(email)
+                else:
+                    print("[WORKER] Instagram did NOT return JSON. Dumping first 300 chars:")
+                    print(response.text[:300])
                     continue
-                username = user_data.get('username')
-                if username:
-                    print(f"[WORKER] Processing IG user: {username}")
-                    infoinsta[username] = user_data
-                    emails = [f"{username}@gmail.com", f"{username}@aol.com"]
-                    for email in emails:
-                        check(email)
             except Exception as e:
                 print("[WORKER JSON ERROR]", e)
                 print("[WORKER RESPONSE STATUS]", response.status_code)
@@ -503,7 +512,7 @@ if __name__ == "__main__":
         Thread(target=gg_worker, daemon=True).start()
     print("[MAIN] All threads started.")
     while True:
-        # 1 minute active
         print("[MAIN] Main loop sleeping 60s...")
         time.sleep(60)
-        print("[MAIN] Main loop sleeping 10s..")
+        print("[MAIN] Main loop sleeping 10s...")
+        time.sleep(10)
