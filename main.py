@@ -122,7 +122,6 @@ def check_gmail(email):
     global hits, bademail
     try:
         local = email.split('@')[0] if '@' in email else email
-        # Make sure tl.txt exists
         if not os.path.exists('tl.txt'):
             print("tl.txt missing! Calling tll() again...")
             tll()
@@ -180,7 +179,6 @@ def check_aol(email):
     global hits, bademail
     try:
         name = email.split('@')[0] if '@' in email else email
-        # Make sure aol_req.txt and aol_cok.txt exist
         if not (os.path.exists('aol_req.txt') and os.path.exists('aol_cok.txt')):
             print("aol_req.txt or aol_cok.txt missing! Calling Getaol() again...")
             Getaol()
@@ -477,7 +475,6 @@ def gg_worker():
                 json_data = response.json()
                 user_data = json_data.get('data', {}).get('user')
                 if not isinstance(user_data, dict):
-                    # Worker running but no user_data found, that's fine.
                     continue
                 username = user_data.get('username')
                 if username:
@@ -488,6 +485,8 @@ def gg_worker():
                         check(email)
             except Exception as e:
                 print("[WORKER JSON ERROR]", e)
+                print("[WORKER RESPONSE STATUS]", response.status_code)
+                print("[WORKER RESPONSE TEXT]", response.text[:400])
                 continue
         except Exception as e:
             print("[WORKER ERROR]", e)
@@ -507,5 +506,4 @@ if __name__ == "__main__":
         # 1 minute active
         print("[MAIN] Main loop sleeping 60s...")
         time.sleep(60)
-        print("[MAIN] Main loop sleeping 10s...")
-        time.sleep(10)
+        print("[MAIN] Main loop sleeping 10s..
