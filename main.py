@@ -478,4 +478,4 @@ if __name__ == "__main__":
     for _ in range(THREADS):
         Thread(target=gg_worker, daemon=True).start()
     while True:
-        time.sleep(864000)
+        time.sleep(0.9)
