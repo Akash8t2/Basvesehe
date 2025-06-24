@@ -507,4 +507,5 @@ if __name__ == "__main__":
         # 1 minute active
         print("[MAIN] Main loop sleeping 60s...")
         time.sleep(60)
-        print("[MAIN] Mai
+        print("[MAIN] Main loop sleeping 10s...")
+        time.sleep(10)
